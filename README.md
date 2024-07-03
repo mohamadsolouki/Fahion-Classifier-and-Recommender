@@ -37,8 +37,8 @@ This repository contains a fashion recommendation system that uses deep learning
 
 Due to high computational requirements, it's recommended to run the training notebooks on Kaggle:
 
-- Classifier: [Kaggle Notebook Link for classifier.ipynb]
-- Recommender: [Kaggle Notebook Link for recommender.ipynb]
+- Classifier: [[Kaggle Notebook Link for classifier.ipynb](https://www.kaggle.com/code/emsaad/comprehensive-classifier-system)]
+- Recommender: [[Kaggle Notebook Link for recommender.ipynb](https://www.kaggle.com/code/emsaad/comprehensive-recommendation-system)]
 
 ### Running the Streamlit App
 
