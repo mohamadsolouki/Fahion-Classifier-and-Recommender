@@ -1,0 +1,1 @@
+{"ResNet50": {"target_size": [224, 224], "preprocess_input": "preprocess_input"}, "Xception": {"target_size": [299, 299], "preprocess_input": "preprocess_input"}, "EfficientNetV2M": {"target_size": [299, 299], "preprocess_input": "preprocess_input"}, "InceptionV3": {"target_size": [299, 299], "preprocess_input": "preprocess_input"}}

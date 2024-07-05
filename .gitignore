@@ -163,5 +163,6 @@ data/images
 data/styles
 data/images.csv
 models/best_model_Xception.keras
+models/best_model_EfficientNetV2M.keras
 recommendation/all_features_pca.npy
 recommendation/all_features.npy
