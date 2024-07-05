@@ -8,6 +8,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.metrics.pairwise import cosine_similarity
+from tensorflow.keras.applications.xception import preprocess_input
 from tensorflow.keras.models import load_model # type: ignore
 
 # --- CONFIGURATIONS ---
@@ -64,7 +65,7 @@ def preprocess_image(img, target_size):
     print(f"Original image shape: {img.shape}")
     img = resize_with_padding(img, target_size[0], target_size[1])
     print(f"Resized image shape: {img.shape}")
-    img = tf.keras.applications.xception.preprocess_input(img)
+    img = preprocess_input(img)
     print(f"Preprocessed image shape: {img.shape}")
     print(f"Preprocessed image min/max values: {tf.reduce_min(img)}/{tf.reduce_max(img)}")
     return img
