@@ -20,20 +20,19 @@ imgs_model_width, imgs_model_height = 299, 299
 
 # --- LOAD CLASSIFICATION MODEL ---
 class_model = load_model('models/best_model_Xception.keras')
-
 # Uncomment the line below to use EfficientNetV2M classification model which is heavier and slower
 # class_model = load_model('models/best_model_EfficientNetV2M.keras')
 
-
 class_labels = ['Backpacks', 'Belts', 'Bra', 'Briefs', 'Capris', 'Caps', 'Casual Shoes',
-                'Clutches', 'Cufflinks', 'Deodorant', 'Dresses', 'Dupatta', 'Earrings', 'Flats',
-                'Flip Flops', 'Formal Shoes', 'Handbags', 'Heels', 'Innerwear Vests',
-                'Jackets', 'Jeans', 'Kajal and Eyeliner', 'Kurtas', 'Kurtis', 'Leggings',
-                'Lip Gloss', 'Lipstick', 'Nail Polish', 'Necklace and Chains', 'Night suits',
-                'Nightdress', 'Pendant', 'Perfume and Body Mist', 'Ring', 'Sandals', 'Sarees',
-                'Scarves', 'Shirts', 'Shorts', 'Skirts', 'Socks', 'Sports Shoes', 'Sunglasses',
-                'Sweaters', 'Sweatshirts', 'Ties', 'Tops', 'Track Pants', 'Trousers', 'Trunk',
-                'Tshirts', 'Tunics', 'Wallets', 'Watches']
+ 'Clutches', 'Cufflinks', 'Deodorant', 'Dresses', 'Dupatta', 'Earrings', 'Flats',
+ 'Flip Flops', 'Formal Shoes', 'Handbags', 'Heels', 'Innerwear Vests',
+ 'Jackets', 'Jeans', 'Kajal and Eyeliner', 'Kurtas', 'Kurtis', 'Leggings',
+ 'Lip Gloss', 'Lipstick', 'Nail Polish', 'Necklace and Chains', 'Night suits',
+ 'Nightdress', 'Pendant', 'Perfume and Body Mist', 'Ring', 'Sandals', 'Sarees',
+ 'Scarves', 'Shirts', 'Shorts', 'Skirts', 'Socks', 'Sports Shoes', 'Sunglasses',
+ 'Sweaters', 'Sweatshirts', 'Ties', 'Tops', 'Track Pants', 'Trousers', 'Trunk',
+ 'Tshirts', 'Tunics', 'Wallets', 'Watches']
+
 
 # --- HELPER FUNCTIONS ---
 
@@ -62,8 +61,12 @@ def resize_with_padding(image, target_height, target_width):
 
 def preprocess_image(img, target_size):
     img = tf.image.decode_image(img, channels=3)
+    print(f"Original image shape: {img.shape}")
     img = resize_with_padding(img, target_size[0], target_size[1])
+    print(f"Resized image shape: {img.shape}")
     img = tf.keras.applications.xception.preprocess_input(img)
+    print(f"Preprocessed image shape: {img.shape}")
+    print(f"Preprocessed image min/max values: {tf.reduce_min(img)}/{tf.reduce_max(img)}")
     return img
 
 def predict_image_class(img_bytes):
@@ -75,21 +78,28 @@ def predict_image_class(img_bytes):
     confidence = round(100 * np.max(predictions[0]), 2)
     return predicted_class, confidence
 
-def extract_features(img):
-    """Extracts features from an image using the feature extractor model."""
-    preprocessed_img = preprocess_image(img, (imgs_model_width, imgs_model_height))
-    preprocessed_img = tf.expand_dims(preprocessed_img, 0)
-    features = feat_extractor.predict(preprocessed_img)
-    return features.reshape(-1)
+def load_and_preprocess_image(img_path):
+    """Loads and preprocesses an image for the recommendation model."""
+    img = tf.io.read_file(img_path)
+    img = preprocess_image(img, (imgs_model_width, imgs_model_height))
+    return tf.expand_dims(img, 0)
 
-def retrieve_most_similar_products(img_bytes, top_n=5):
-    """Retrieves the most similar products for a given image."""
-    img_features = extract_features(img_bytes)
-    img_features_pca = pca.transform(img_features.reshape(1, -1))
-    similarities = cosine_similarity(img_features_pca, all_features_pca).flatten()
-    top_indices = np.argsort(-similarities)[:top_n]
-    image_files = [os.path.join(data_path, f) for f in os.listdir(data_path) if f.endswith(".jpg")]
-    closest_imgs = [(image_files[i], float(similarities[i])) for i in top_indices]
+def retrieve_most_similar_products(given_img, top_n=5):
+    if given_img in top_similarities:
+        closest_imgs = top_similarities[given_img][:top_n]
+        print(f"Using pre-calculated similarities for {given_img}")
+    else:
+        print(f"Calculating similarities in real-time for {given_img}")
+        img_features = feat_extractor.predict(load_and_preprocess_image(given_img))
+        print(f"Extracted features shape: {img_features.shape}")
+        img_features_pca = pca.transform(img_features.reshape(1, -1))
+        print(f"PCA transformed features shape: {img_features_pca.shape}")
+        similarities = cosine_similarity(img_features_pca, all_features_pca).flatten()
+        print(f"Calculated similarities shape: {similarities.shape}")
+        top_indices = np.argsort(-similarities)[:top_n]
+        image_files = [os.path.join(data_path, f) for f in os.listdir(data_path) if f.endswith(".jpg")]
+        closest_imgs = [(image_files[i], float(similarities[i])) for i in top_indices]
+
     return closest_imgs
 
 def image_classification_page():
@@ -124,7 +134,12 @@ def image_classification_page():
                     st.success(f'Predicted Class: {predicted_class}')
                     st.info(f'Confidence: {confidence}%')
 
-                retrieved = retrieve_most_similar_products(img_bytes, top_n=5)
+                original_filename = uploaded_file.name
+                temp_img_path = os.path.join("data/images/", original_filename)
+                with open(temp_img_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+
+                retrieved = retrieve_most_similar_products(temp_img_path, top_n=5)
 
                 st.subheader("Recommended Products")
                 st.write("Here are 5 similar products based on your uploaded image:")
